@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linguistic Transcription & Field Data Collection System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        academic: {
+                            50: '#f5f7fa',
+                            100: '#eaeef4',
+                            200: '#d0dae6',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Embedded Styles for Custom Elements and Printing -->
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+        /* Custom Highlight Colors */
+        .hl-filler { background-color: rgba(239, 68, 68, 0.15); border-bottom: 2px dashed #ef4444; }
+        .hl-pause { background-color: rgba(245, 158, 11, 0.15); border-bottom: 2px dotted #f59e0b; }
+        .hl-discourse { background-color: rgba(59, 130, 246, 0.15); border-bottom: 2px solid #3b82f6; }
+        .hl-codeswitch { background-color: rgba(168, 85, 247, 0.2); border-bottom: 2px solid #a855f7; border-radius: 2px; }
+        
+        .dark .hl-filler { background-color: rgba(239, 68, 68, 0.3); }
+        .dark .hl-pause { background-color: rgba(245, 158, 11, 0.3); }
+        .dark .hl-discourse { background-color: rgba(59, 130, 246, 0.3); }
+        .dark .hl-codeswitch { background-color: rgba(168, 85, 247, 0.35); }
+
+        /* Print styling for Academic Journal layout */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                font-family: Garamond, "Times New Roman", serif !important;
+                font-size: 11pt !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-layout {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .utterance-print-card {
+                page-break-inside: avoid;
+                border-bottom: 1px solid #ddd;
+                padding: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-academic-50 dark:bg-academic-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Top Navigation Header -->
+    <header class="no-print border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 sticky top-0 z-50 px-6 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-lg">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight tracking-tight flex items-center gap-2">
+                    LINGUA-FIELD <span class="text-xs bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200 px-2.5 py-0.5 rounded font-mono font-medium">v2.5</span>
+                </h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Real-Time Multilingual Transcription & Linguistic Fieldwork Dashboard</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <!-- Active Status Toggles -->
+            <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-lg text-xs font-semibold">
+                <button id="toggleResearchMode" class="px-3 py-1.5 rounded-md bg-indigo-600 text-white shadow-sm transition">
+                    🔬 Research Mode: ON
+                </button>
+            </div>
+
+            <!-- Dark Mode Toggle -->
+            <button id="themeToggle" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Toggle System Theme">
+                <!-- Light Mode Icon -->
+                <svg id="lightIcon" class="w-5 h-5 hidden dark:block text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path></svg>
+                <!-- Dark Mode Icon -->
+                <svg id="darkIcon" class="w-5 h-5 block dark:hidden text-indigo-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Split Layout -->
+    <main class="no-print flex-1 grid grid-cols-12 overflow-hidden h-[calc(100vh-64px)]">
+        
+        <!-- Left Panel: Session Config, Controls & Audio Engine -->
+        <section class="col-span-12 lg:col-span-3 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col overflow-y-auto p-4 space-y-5">
+            
+            <!-- Session Meta Card -->
+            <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-150 dark:border-slate-800">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Linguistic Session Meta</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-500 mb-1">Session Title</label>
+                        <input id="sessionTitle" type="text" value="Cebuano-Taglish Spontaneous Interaction" class="w-full bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Researcher</label>
+                            <input id="sessionResearcher" type="text" value="Dr. J. Cruz" class="w-full bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-500 mb-1">Location</label>
+                            <input id="sessionLoc" type="text" value="Manila, PH" class="w-full bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Speech Engine Control Hub -->
+            <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-150 dark:border-slate-800">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Live Speech Engine</h3>
+                
+                <!-- Primary Action Buttons -->
+                <div class="flex flex-col gap-2.5">
+                    <button id="btnRecord" class="w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-lg flex items-center justify-center gap-2.5 relative overflow-hidden">
+                        <span class="relative flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-100"></span>
+                        </span>
+                        <span>Start Recording</span>
+                    </button>
+
+                    <button id="btnPause" class="w-full py-2.5 px-4 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Pause Listening</span>
+                    </button>
+                </div>
+
+                <!-- Waveform Visualizer -->
+                <div class="mt-4 bg-slate-900 rounded-lg p-2 relative h-16 border border-slate-800 overflow-hidden flex items-center justify-center">
+                    <canvas id="waveformCanvas" class="w-full h-full absolute inset-0"></canvas>
+                    <div id="visualizerFallback" class="z-10 text-[10px] text-slate-500 text-center select-none font-mono">
+                        Visualizer Standby (In-Memory Audio Context ready)
+                    </div>
+                </div>
+
+                <!-- Speech Activity Indicator -->
+                <div class="mt-3 flex items-center justify-between text-xs font-mono px-1">
+                    <span class="text-slate-400 flex items-center gap-1.5">
+                        <span id="speechIndicatorDot" class="w-2.5 h-2.5 rounded-full bg-slate-400 transition-colors duration-200"></span>
+                        Status: <span id="speechIndicatorText" class="font-bold text-slate-500">Idle</span>
+                    </span>
+                    <span class="text-indigo-500 font-semibold" id="speechTimer">00:00:00</span>
+                </div>
+            </div>
+
+            <!-- Multilingual Context Settings -->
+            <div class="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-150 dark:border-slate-800 space-y-4">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Multilingual Target</h3>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Primary Target Code</label>
+                    <select id="langSelector" class="w-full bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="fil-PH" selected>Filipino 🇵🇭 (Tagalog Context)</option>
+                        <option value="en-US">English 🇺🇸 (Global Context)</option>
+                        <option value="zh-CN">Mandarin Chinese 🇨🇳 (Putonghua)</option>
+                        <option value="auto">Auto Language Detect (Best Effort)</option>
+                    </select>
+                </div>
+
+                <!-- Linguistic Analysis Threshold Rules -->
+                <div>
+                    <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Adaptive Segmenter</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-[11px] font-mono text-slate-500 mb-1">
+                                <span>Pause Threshold</span>
+                                <span id="pauseVal">1.5s</span>
+                            </div>
+                            <input id="pauseSlider" type="range" min="0.5" max="3" step="0.1" value="1.5" class="w-full accent-indigo-600">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Version History / Undo Timeline -->
+            <div class="mt-auto pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+                <button id="btnUndo" class="flex items-center gap-1 hover:text-indigo-500 disabled:opacity-50" disabled>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"></path></svg>
+                    <span>Undo</span>
+                </button>
+                <span id="saveStatus">Session Saved</span>
+                <button id="btnRedo" class="flex items-center gap-1 hover:text-indigo-500 disabled:opacity-50" disabled>
+                    <span>Redo</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 005 8v8a1 1 0 001.6.8l5.334-4z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.334-4z"></path></svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- Center Panel: Live Transcription & Field Annotation Workspace -->
+        <section class="col-span-12 lg:col-span-6 bg-slate-100 dark:bg-slate-950 flex flex-col overflow-hidden h-full">
+            
+            <!-- Quick Linguistic Search and Filtration Header -->
+            <div class="p-4 border-b border-slate-200 dark:border-slate-850 bg-white dark:bg-slate-900 flex flex-wrap gap-2.5 items-center justify-between">
+                <div class="relative flex-1 min-w-[200px]">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </span>
+                    <input id="searchInput" type="text" placeholder="Search utterance tokens, IPA, or notes..." class="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <select id="filterTag" class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-semibold">
+                        <option value="all">All Languages</option>
+                        <option value="Tagalog">Tagalog</option>
+                        <option value="Cebuano">Cebuano / Bisaya</option>
+                        <option value="English">English</option>
+                        <option value="Mandarin">Mandarin</option>
+                        <option value="code_switch">Code-Switch Segment</option>
+                        <option value="has_fillers">Contains Fillers</option>
+                    </select>
+
+                    <button id="btnAddNewUtterance" class="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                        <span>Add Segment</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Live Interim / Speech Feed Panel -->
+            <div id="interimDisplay" class="bg-indigo-50/50 dark:bg-indigo-950/20 px-6 py-2.5 border-b border-indigo-100 dark:border-indigo-950/40 text-xs font-mono text-indigo-700 dark:text-indigo-300 italic flex items-center justify-between transition-all hidden">
+                <span class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></span>
+                    <span>Interim Pipeline: <span id="interimText" class="font-semibold text-slate-800 dark:text-slate-200 not-italic">...</span></span>
+                </span>
+            </div>
+
+            <!-- Utterance Stream Workspace -->
+            <div id="transcriptStream" class="flex-1 overflow-y-auto p-4 space-y-4">
+                <!-- Utterance Nodes will be dynamically compiled here -->
+            </div>
+        </section>
+
+        <!-- Right Panel: Quantitative & Qualitative Analytics Panel -->
+        <section class="col-span-12 lg:col-span-3 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col overflow-y-auto p-4 space-y-6">
+            
+            <!-- Real-Time Metrics & Performance Metadata -->
+            <div>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Linguistic Analytics</h3>
+                
+                <div class="grid grid-cols-2 gap-2.5">
+                    <div class="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg border border-slate-100 dark:border-slate-800 text-center">
+                        <span class="block text-[10px] uppercase text-slate-400 font-bold">Total Utterances</span>
+                        <span id="metricTotalUtterance" class="text-2xl font-extrabold text-indigo-600 dark:text-indigo-400">0</span>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg border border-slate-100 dark:border-slate-800 text-center">
+                        <span class="block text-[10px] uppercase text-slate-400 font-bold">Average WPM</span>
+                        <span id="metricWPM" class="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Language Proportional Representation Mixer -->
+            <div class="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">Language Mixing Ratio</h3>
+                <div class="space-y-2">
+                    <div class="h-3 w-full bg-slate-200 dark:bg-slate-700 rounded-full flex overflow-hidden" id="ratioMixBar">
+                        <!-- Dynamic segment bar elements populated via JS -->
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5 text-[10px] font-mono" id="ratioMetricsGrid">
+                        <!-- Legend and text data generated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Discourse Patterns & Filler Distribution -->
+            <div>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Discourse & Filler Tracker</h3>
+                <div class="space-y-2 text-xs" id="discourseTrackerList">
+                    <!-- Progress bar visualizations populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Key Token/Word Frequency Analyzer -->
+            <div>
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Frequent Lexical Tokens</h3>
+                <div class="overflow-hidden border border-slate-100 dark:border-slate-800 rounded-lg">
+                    <table class="min-w-full text-xs">
+                        <thead class="bg-slate-50 dark:bg-slate-800 text-slate-500">
+                            <tr>
+                                <th class="px-3 py-1.5 text-left font-bold uppercase tracking-wider">Token</th>
+                                <th class="px-3 py-1.5 text-right font-bold uppercase tracking-wider">Freq</th>
+                            </tr>
+                        </thead>
+                        <tbody id="wordFreqTable" class="divide-y divide-slate-100 dark:divide-slate-800">
+                            <!-- Populated with token arrays -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Interactive Export Hub -->
+            <div class="mt-auto pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Export Datasets</h3>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="exportData('json')" class="py-2 px-3 bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-750 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+                        <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>JSON</span>
+                    </button>
+                    <button onclick="exportData('docx')" class="py-2 px-3 bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-750 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+                        <svg class="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>DOCX (Word)</span>
+                    </button>
+                    <button onclick="exportData('html')" class="py-2 px-3 bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-750 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+                        <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                        <span>Interactive HTML</span>
+                    </button>
+                    <button onclick="exportData('txt')" class="py-2 px-3 bg-slate-100 dark:bg-slate-850 hover:bg-slate-200 dark:hover:bg-slate-750 border border-slate-200 dark:border-slate-750 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span>Raw Text</span>
+                    </button>
+                </div>
+                <button onclick="exportData('pdf')" class="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                    <span>Print Journal-Ready PDF</span>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Interactive IPA Character Panel Map (Helper Modal for Phonetics Input) -->
+    <div id="ipaKeyboardModal" class="no-print fixed inset-x-0 bottom-0 bg-slate-900/95 backdrop-blur border-t border-slate-800 shadow-2xl p-4 transition-all duration-300 transform translate-y-full z-50">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-mono text-indigo-400 font-bold">IPA Phonetic Annotation Assistant (Click to Insert at Caret)</span>
+                <button id="btnCloseIpaKeyboard" class="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <!-- Dynamic Category Grid -->
+            <div class="grid grid-cols-4 gap-4">
+                <div>
+                    <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-1">Plosives & Nasals</h4>
+                    <div class="flex flex-wrap gap-1" id="ipaPlosives"></div>
+                </div>
+                <div>
+                    <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-1">Fricatives & Liquids</h4>
+                    <div class="flex flex-wrap gap-1" id="ipaFricatives"></div>
+                </div>
+                <div>
+                    <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-1">Vowels</h4>
+                    <div class="flex flex-wrap gap-1" id="ipaVowels"></div>
+                </div>
+                <div>
+                    <h4 class="text-[10px] uppercase font-bold text-slate-500 mb-1">Suprasegmentals & Symbols</h4>
+                    <div class="flex flex-wrap gap-1" id="ipaSupra"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Printable Area for Clean Journal Exports -->
+    <div id="printableArea" class="hidden print-layout p-8">
+        <h1 class="text-3xl font-serif font-bold text-center border-b-2 border-black pb-2 mb-4" id="printTitle"></h1>
+        <div class="grid grid-cols-2 gap-4 text-sm mb-6 pb-4 border-b border-gray-300">
+            <div><strong>Principal Investigator:</strong> <span id="printInvestigator"></span></div>
+            <div><strong>Location/Setting:</strong> <span id="printLocation"></span></div>
+            <div><strong>Date Generated:</strong> <span id="printDate"></span></div>
+            <div><strong>Primary Language Configuration:</strong> <span id="printLang"></span></div>
+        </div>
+        <div id="printUtterances" class="space-y-6">
+            <!-- Programmatically injected -->
+        </div>
+    </div>
+
+    <!-- MAIN SYSTEM ARCHITECTURE ENGINE (JAVASCRIPT) -->
+    <script>
+        // System Global State Container
+        const STATE = {
+            session: {
+                title: "Cebuano-Taglish Spontaneous Interaction",
+                location: "Manila, PH",
+                date: new Date().toISOString().split('T')[0],
+                researcher: "Dr. J. Cruz",
+                language_mode: "multilingual"
+            },
+            utterances: [],
+            undoStack: [],
+            redoStack: [],
+            researchMode: true,
+            isRecording: false,
+            isPaused: false,
+            lastSaveTime: null,
+            timerInterval: null,
+            recordingSeconds: 0
+        };
+
+        // Static Dictionaries for Multi-language Phonetic & Segmental Extraction Rules
+        const DISCOURSE_DICTIONARY = {
+            English: {
+                markers: ['so', 'like', 'basically', 'actually', 'then', 'honestly', 'right', 'well', 'anyway'],
+                fillers: ['uh', 'um', 'ah', 'err', 'like']
+            },
+            Filipino: {
+                markers: ['kaya', 'kasi', 'naman', 'pala', 'talaga', 'sige', 'ba', 'daw', 'raw', 'nga', 'ano'],
+                fillers: ['ano', 'eh', 'ah', 'um', 'kuwan']
+            },
+            Cebuano: {
+                markers: ['gani', 'lage', 'bitaw', 'unta', 'gyud', 'dyud', 'man', 'kaha', 'pod', 'pud'],
+                fillers: ['kuan', 'ah', 'um', 'e']
+            },
+            Mandarin: {
+                markers: ['na', 'nage', 'jiushi', 'dui', 'ranhou', 'nage', 'hao'],
+                fillers: ['neige', 'zhege', 'a', 'em']
+            }
+        };
+
+        const VOCAB_POOLS = {
+            Tagalog: ['ako', 'ikaw', 'siya', 'kami', 'kayo', 'sila', 'ang', 'mga', 'ng', 'sa', 'para', 'may', 'mayroon', 'hindi', 'wala', 'at', 'na', 'oo', 'palengke', 'kumain', 'masaya', 'maganda', 'ba', 'po', 'opo', 'sige', 'laro', 'trabaho', 'kasi', 'kaya', 'naman', 'pala', 'talaga'],
+            Cebuano: ['ako', 'ikaw', 'siya', 'kami', 'kamo', 'sila', 'ang', 'mga', 'sa', 'para', 'naay', 'wala', 'dili', 'ug', 'nga', 'oo', 'palengke', 'kaon', 'malipayon', 'nindot', 'ba', 'sige', 'dula', 'trabaho', 'naa', 'unsa', 'kinsa', 'hain', 'asa', 'gani', 'lage', 'bitaw', 'unta', 'gyud', 'dyud', 'man', 'kaha', 'pod', 'pud'],
+            English: ['i', 'you', 'he', 'she', 'we', 'they', 'the', 'of', 'in', 'out', 'for', 'have', 'has', 'not', 'no', 'yes', 'and', 'that', 'go', 'went', 'market', 'meeting', 'today', 'later', 'with', 'standard', 'speech', 'so', 'like', 'basically', 'actually', 'then', 'honestly', 'right', 'well'],
+            Mandarin: ['wo', 'ni', 'ta', 'women', 'nimen', 'tamen', 'de', 'le', 'ma', 'bu', 'shi', 'you', 'mei', 'he', 'xiang', 'qu', 'shichang', 'huiyi', 'jintian', 'yihou', 'na', 'nage', 'jiushi', 'dui', 'ranhou', 'hao', 'neige', 'zhege', 'a', 'em']
+        };
+
+        // Static Phonetic Map for Auto-IPA Generation Helper
+        const IPA_MAP = {
+            'b': 'b', 'd': 'd', 'f': 'f', 'h': 'h', 'k': 'k', 'l': 'l', 'm': 'm', 'n': 'n', 'p': 'p', 'r': 'r', 's': 's', 't': 't', 'v': 'v', 'w': 'w', 'z': 'z',
+            'g': 'ɡ', 'j': 'dʒ', 'y': 'j', 'ch': 'tʃ', 'sh': 'ʃ', 'th': 'θ', 'ng': 'ŋ', 'kh': 'x', 'zh': 'tʂ',
+            'a': 'a', 'e': 'ɛ', 'i': 'i', 'o': 'o', 'u': 'u', 'oo': 'uː', 'ee': 'iː', 'ea': 'iː', 'ai': 'aɪ', 'ou': 'aʊ'
+        };
+
+        // IPA Keyboard Layout Arrays
+        const IPA_KEYS = {
+            plosives: ['p', 'b', 't', 'd', 'ʈ', 'ɖ', 'c', 'ɟ', 'k', 'ɡ', 'q', 'ɢ', 'ʔ', 'm', 'ɱ', 'n', 'ɳ', 'ɲ', 'ŋ', 'ɴ'],
+            fricatives: ['ɸ', 'β', 'f', 'v', 'θ', 'ð', 's', 'z', 'ʃ', 'ʒ', 'ʂ', 'ʐ', 'ç', 'ʝ', 'x', 'ɣ', 'χ', 'ʁ', 'ħ', 'ʕ', 'h', 'ɦ', 'ɬ', 'ɮ', 'ɹ', 'ɻ', 'j', 'ɰ', 'l', 'ɭ', 'ʎ', 'ʟ'],
+            vowels: ['i', 'y', 'ɨ', 'ʉ', 'ɯ', 'u', 'ɪ', 'ʏ', 'ʊ', 'e', 'ø', 'ɘ', 'ɵ', 'ɤ', 'o', 'e̞', 'ø̞', 'ə', 'ɤ̞', 'o̞', 'ɛ', 'œ', 'ɜ', 'ɞ', 'ʌ', 'ɔ', 'æ', 'ɐ', 'a', 'Œ', 'ɑ', 'ɒ'],
+            supra: ['ˈ', 'ˌ', 'ː', 'ˑ', '˘', '.', '‖', '↗', '↘', '́', '̀', '̂', '̌']
+        };
+
+        // DOM Element Registry
+        const DOM = {
+            sessionTitle: document.getElementById('sessionTitle'),
+            sessionResearcher: document.getElementById('sessionResearcher'),
+            sessionLoc: document.getElementById('sessionLoc'),
+            btnRecord: document.getElementById('btnRecord'),
+            btnPause: document.getElementById('btnPause'),
+            waveformCanvas: document.getElementById('waveformCanvas'),
+            visualizerFallback: document.getElementById('visualizerFallback'),
+            speechIndicatorDot: document.getElementById('speechIndicatorDot'),
+            speechIndicatorText: document.getElementById('speechIndicatorText'),
+            speechTimer: document.getElementById('speechTimer'),
+            langSelector: document.getElementById('langSelector'),
+            pauseSlider: document.getElementById('pauseSlider'),
+            pauseVal: document.getElementById('pauseVal'),
+            btnUndo: document.getElementById('btnUndo'),
+            btnRedo: document.getElementById('btnRedo'),
+            saveStatus: document.getElementById('saveStatus'),
+            searchInput: document.getElementById('searchInput'),
+            filterTag: document.getElementById('filterTag'),
+            btnAddNewUtterance: document.getElementById('btnAddNewUtterance'),
+            interimDisplay: document.getElementById('interimDisplay'),
+            interimText: document.getElementById('interimText'),
+            transcriptStream: document.getElementById('transcriptStream'),
+            metricTotalUtterance: document.getElementById('metricTotalUtterance'),
+            metricWPM: document.getElementById('metricWPM'),
+            ratioMixBar: document.getElementById('ratioMixBar'),
+            ratioMetricsGrid: document.getElementById('ratioMetricsGrid'),
+            discourseTrackerList: document.getElementById('discourseTrackerList'),
+            wordFreqTable: document.getElementById('wordFreqTable'),
+            toggleResearchMode: document.getElementById('toggleResearchMode'),
+            themeToggle: document.getElementById('themeToggle'),
+            lightIcon: document.getElementById('lightIcon'),
+            darkIcon: document.getElementById('darkIcon'),
+            ipaKeyboardModal: document.getElementById('ipaKeyboardModal'),
+            btnCloseIpaKeyboard: document.getElementById('btnCloseIpaKeyboard'),
+            ipaPlosives: document.getElementById('ipaPlosives'),
+            ipaFricatives: document.getElementById('ipaFricatives'),
+            ipaVowels: document.getElementById('ipaVowels'),
+            ipaSupra: document.getElementById('ipaSupra'),
+            printableArea: document.getElementById('printableArea'),
+            printTitle: document.getElementById('printTitle'),
+            printInvestigator: document.getElementById('printInvestigator'),
+            printLocation: document.getElementById('printLocation'),
+            printDate: document.getElementById('printDate'),
+            printLang: document.getElementById('printLang'),
+            printUtterances: document.getElementById('printUtterances')
+        };
+
+        // Active Focus Element tracker for custom IPA keyboard routing
+        let currentFocusedPhoneticInput = null;
+
+        /* ==========================================================================
+           1. SPEECH ENGINE & MIC CAPTURE (Web Speech API integration)
+           ========================================================================== */
+        let recognition = null;
+        let audioCtx = null;
+        let analyser = null;
+        let audioStream = null;
+        let lastSpeechTime = Date.now();
+
+        function initSpeechEngine() {
+            const SpeechRecObj = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecObj) {
+                alert("Speech recognition API is not natively supported in this browser. Running in manual annotation mode.");
+                return;
+            }
+            recognition = new SpeechRecObj();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+
+            // Apply selected language configuration
+            recognition.lang = DOM.langSelector.value === 'auto' ? 'fil-PH' : DOM.langSelector.value;
+
+            recognition.onstart = () => {
+                setSpeechStatus('Listening', 'bg-emerald-500 animate-pulse');
+            };
+
+            recognition.onerror = (e) => {
+                if (e.error === 'no-speech') return;
+                console.warn("Speech engine warning/error: ", e.error);
+                if (STATE.isRecording && !STATE.isPaused) {
+                    try { recognition.start(); } catch(_) {} // keep listening
+                }
+            };
+
+            recognition.onend = () => {
+                if (STATE.isRecording && !STATE.isPaused) {
+                    try { recognition.start(); } catch(_) {} // Automatically keep continuous alive
+                } else {
+                    setSpeechStatus('Idle', 'bg-slate-400');
+                }
+            };
+
+            recognition.onresult = (e) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = e.resultIndex; i < e.results.length; ++i) {
+                    if (e.results[i].isFinal) {
+                        finalTranscript += e.results[i][0].transcript;
+                    } else {
+                        interimTranscript += e.results[i][0].transcript;
+                    }
+                }
+
+                if (interimTranscript) {
+                    DOM.interimDisplay.classList.remove('hidden');
+                    DOM.interimText.textContent = interimTranscript;
+                } else {
+                    DOM.interimDisplay.classList.add('hidden');
+                }
+
+                if (finalTranscript.trim()) {
+                    lastSpeechTime = Date.now();
+                    const confidence = e.results[e.results.length - 1][0].confidence || 0.90;
+                    appendUtteranceFromStream(finalTranscript, confidence);
+                }
+            };
+        }
+
+        function setSpeechStatus(text, bgClass) {
+            DOM.speechIndicatorDot.className = `w-2.5 h-2.5 rounded-full ${bgClass}`;
+            DOM.speechIndicatorText.textContent = text;
+            if (text === 'Listening') {
+                DOM.speechIndicatorText.className = "font-bold text-emerald-600 dark:text-emerald-400";
+            } else if (text === 'Paused') {
+                DOM.speechIndicatorText.className = "font-bold text-amber-500";
+            } else {
+                DOM.speechIndicatorText.className = "font-bold text-slate-500";
+            }
+        }
+
+        async function initAudioVisualization() {
+            if (audioCtx) return;
+            try {
+                audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContextClass();
+                analyser = audioCtx.createAnalyser();
+                const source = audioCtx.createMediaStreamSource(audioStream);
+                source.connect(analyser);
+                analyser.fftSize = 256;
+                DOM.visualizerFallback.classList.add('hidden');
+                drawWaveform();
+            } catch (err) {
+                console.warn("Could not load microphone interface for canvas visualization:", err);
+                DOM.visualizerFallback.textContent = "Mic Visualizer Offline (Hardware Blocked)";
+            }
+        }
+
+        function drawWaveform() {
+            if (!analyser) return;
+            requestAnimationFrame(drawWaveform);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteTimeDomainData(dataArray);
+
+            const canvas = DOM.waveformCanvas;
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width = canvas.parentElement.offsetWidth;
+            const height = canvas.height = canvas.parentElement.offsetHeight;
+
+            ctx.fillStyle = '#0f172a'; // dark dark backdrop
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = STATE.isRecording ? '#10b981' : '#6366f1'; // emerald active, indigo idle
+            ctx.beginPath();
+
+            const sliceWidth = width / bufferLength;
+            let x = 0;
+
+            for (let i = 0; i < bufferLength; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = (v * height) / 2;
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+                x += sliceWidth;
+            }
+
+            ctx.lineTo(width, height / 2);
+            ctx.stroke();
+        }
+
+        /* ==========================================================================
+           2. HEURISTIC LINGUISTIC PARSING ENGINE
+           ========================================================================== */
+        function analyzeUtteranceLinguistically(rawText) {
+            const tokens = rawText.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").split(/\s+/);
+            const rawTokens = rawText.split(/\s+/);
+            
+            let detectedLangTags = [];
+            let codeSwitch = false;
+            let fillersFound = [];
+            let discourseFound = [];
+
+            // Detect language usage tags based on vocabulary coverage
+            let tagalogCount = 0;
+            let cebuanoCount = 0;
+            let englishCount = 0;
+            let mandarinCount = 0;
+
+            tokens.forEach(tok => {
+                if (VOCAB_POOLS.Tagalog.includes(tok)) tagalogCount++;
+                if (VOCAB_POOLS.Cebuano.includes(tok)) cebuanoCount++;
+                if (VOCAB_POOLS.English.includes(tok)) englishCount++;
+                if (VOCAB_POOLS.Mandarin.includes(tok)) mandarinCount++;
+            });
+
+            if (tagalogCount > 0) detectedLangTags.push('Tagalog');
+            if (cebuanoCount > 0) detectedLangTags.push('Cebuano');
+            if (englishCount > 0) detectedLangTags.push('English');
+            if (mandarinCount > 0) detectedLangTags.push('Mandarin');
+
+            // Fallback default language based on settings if no words are matched directly
+            if (detectedLangTags.length === 0) {
+                const mapSelect = { 'fil-PH': 'Tagalog', 'en-US': 'English', 'zh-CN': 'Mandarin' };
+                detectedLangTags.push(mapSelect[DOM.langSelector.value] || 'English');
+            }
+
+            // Flag as Code Switch if multiple distinct vocab layers are present inside same segment
+            if (detectedLangTags.length > 1) {
+                codeSwitch = true;
+            }
+
+            // Parse fillers & markers based on dictionaries
+            detectedLangTags.forEach(lang => {
+                const dict = DISCOURSE_DICTIONARY[lang];
+                if (!dict) return;
+
+                tokens.forEach(tok => {
+                    if (dict.fillers.includes(tok) && !fillersFound.includes(tok)) {
+                        fillersFound.push(tok);
+                    }
+                    if (dict.markers.includes(tok) && !discourseFound.includes(tok)) {
+                        discourseFound.push(tok);
+                    }
+                });
+            });
+
+            // Generate robust default Phonetic approximation using simple IPA rules
+            let phoneticApprox = generateRuleBasedIpa(rawText);
+
+            // Predict sentence type
+            let sentenceType = 'declarative';
+            if (rawText.endsWith('?') || tokens.includes('ba') || tokens.includes('unsa') || tokens.includes('what') || tokens.includes('why') || tokens.includes('how')) {
+                sentenceType = 'interrogative';
+            } else if (rawText.endsWith('!') || tokens.includes('wow') || tokens.includes('grabe') || tokens.includes('hala')) {
+                sentenceType = 'exclamatory';
+            }
+
+            return {
+                language_tags: detectedLangTags,
+                code_switch: codeSwitch,
+                discourse_markers: discourseFound,
+                fillers: fillersFound,
+                sentence_type: sentenceType,
+                phonetic_approx: phoneticApprox
+            };
+        }
+
+        function generateRuleBasedIpa(text) {
+            let clean = text.toLowerCase().trim();
+            let ipa = [];
+            let i = 0;
+
+            while (i < clean.length) {
+                let match = false;
+                // Double character matching
+                if (i < clean.length - 1) {
+                    let doubleChar = clean.substring(i, i + 2);
+                    if (doubleChar in IPA_MAP) {
+                        ipa.push(IPA_MAP[doubleChar]);
+                        i += 2;
+                        match = true;
+                    }
+                }
+                // Single character matching
+                if (!match) {
+                    let singleChar = clean[i];
+                    if (singleChar in IPA_MAP) {
+                        ipa.push(IPA_MAP[singleChar]);
+                    } else if (/\s/.test(singleChar)) {
+                        ipa.push(' ');
+                    } else {
+                        // Conserve non-mapped structural symbols/characters
+                        ipa.push(singleChar);
+                    }
+                    i++;
+                }
+            }
+            return '/' + ipa.join('') + '/';
+        }
+
+        /* ==========================================================================
+           3. TRANSCRIPT MANAGER MODULE
+           ========================================================================== */
+        function appendUtteranceFromStream(text, confidence = 0.92) {
+            pushHistoryState();
+            
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const analysis = analyzeUtteranceLinguistically(text);
+
+            const newUtterance = {
+                id: 'ut_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                timestamp: timeStr,
+                raw_text: text,
+                normalized_text: text,
+                language_tags: analysis.language_tags,
+                code_switch: analysis.code_switch,
+                discourse_markers: analysis.discourse_markers,
+                fillers: analysis.fillers,
+                sentence_type: analysis.sentence_type,
+                phonetic_approx: analysis.phonetic_approx,
+                confidence: parseFloat(confidence.toFixed(2)),
+                notes: "",
+                pos_tags: [], // array of objects {word, tag}
+                emphasis: [] // array of index coordinates of raw text emphasis
+            };
+
+            STATE.utterances.push(newUtterance);
+            renderTranscriptWorkspace();
+            runLinguisticAnalytics();
+            saveSession();
+        }
+
+        function deleteUtterance(id) {
+            pushHistoryState();
+            STATE.utterances = STATE.utterances.filter(u => u.id !== id);
+            renderTranscriptWorkspace();
+            runLinguisticAnalytics();
+            saveSession();
+        }
+
+        function updateUtteranceField(id, field, value) {
+            pushHistoryState();
+            const index = STATE.utterances.findIndex(u => u.id === id);
+            if (index !== -1) {
+                STATE.utterances[index][field] = value;
+                
+                // Re-analyze linguistic layers automatically if text field modified
+                if (field === 'raw_text') {
+                    const analysis = analyzeUtteranceLinguistically(value);
+                    STATE.utterances[index].language_tags = analysis.language_tags;
+                    STATE.utterances[index].code_switch = analysis.code_switch;
+                    STATE.utterances[index].discourse_markers = analysis.discourse_markers;
+                    STATE.utterances[index].fillers = analysis.fillers;
+                }
+                
+                runLinguisticAnalytics();
+                saveSession();
+            }
+        }
+
+        function splitUtteranceAtCursor(id, cursorIndex, rawText) {
+            pushHistoryState();
+            const index = STATE.utterances.findIndex(u => u.id === id);
+            if (index === -1) return;
+
+            const target = STATE.utterances[index];
+            const textA = rawText.substring(0, cursorIndex).trim();
+            const textB = rawText.substring(cursorIndex).trim();
+
+            if (!textA || !textB) return; // ignore boundary errors
+
+            // Create segment A
+            target.raw_text = textA;
+            target.normalized_text = textA;
+            const analysisA = analyzeUtteranceLinguistically(textA);
+            target.language_tags = analysisA.language_tags;
+            target.code_switch = analysisA.code_switch;
+            target.phonetic_approx = analysisA.phonetic_approx;
+
+            // Create segment B
+            const childId = 'ut_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+            const analysisB = analyzeUtteranceLinguistically(textB);
+            const childUtterance = {
+                ...target,
+                id: childId,
+                raw_text: textB,
+                normalized_text: textB,
+                language_tags: analysisB.language_tags,
+                code_switch: analysisB.code_switch,
+                phonetic_approx: analysisB.phonetic_approx,
+                confidence: 0.95
+            };
+
+            STATE.utterances.splice(index + 1, 0, childUtterance);
+            renderTranscriptWorkspace();
+            runLinguisticAnalytics();
+            saveSession();
+        }
+
+        function mergeUtteranceWithPrevious(id) {
+            pushHistoryState();
+            const index = STATE.utterances.findIndex(u => u.id === id);
+            if (index <= 0) return; // Cannot merge the first item
+
+            const current = STATE.utterances[index];
+            const previous = STATE.utterances[index - 1];
+
+            previous.raw_text += " " + current.raw_text;
+            previous.normalized_text = previous.raw_text;
+            
+            // Re-analyze merged item
+            const analysis = analyzeUtteranceLinguistically(previous.raw_text);
+            previous.language_tags = analysis.language_tags;
+            previous.code_switch = analysis.code_switch;
+            previous.phonetic_approx = analysis.phonetic_approx;
+            previous.discourse_markers = [...new Set([...previous.discourse_markers, ...current.discourse_markers])];
+            previous.fillers = [...new Set([...previous.fillers, ...current.fillers])];
+
+            // Remove merged node
+            STATE.utterances.splice(index, 1);
+            renderTranscriptWorkspace();
+            runLinguisticAnalytics();
+            saveSession();
+        }
+
+        /* ==========================================================================
+           4. DATA EXPORT SYSTEM
+           ========================================================================== */
+        function compileFullDatasetJSON() {
+            return {
+                session: {
+                    title: DOM.sessionTitle.value,
+                    researcher: DOM.sessionResearcher.value,
+                    location: DOM.sessionLoc.value,
+                    date: STATE.session.date,
+                    language_mode: STATE.session.language_mode
+                },
+                utterances: STATE.utterances,
+                analysis: calculateSummaryData()
+            };
+        }
+
+        function calculateSummaryData() {
+            const allWords = STATE.utterances.flatMap(u => u.raw_text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").split(/\s+/)).filter(Boolean);
+            const freqMap = {};
+            allWords.forEach(w => freqMap[w] = (freqMap[w] || 0) + 1);
+            const frequentWords = Object.entries(freqMap).sort((a,b)=>b[1]-a[1]).slice(0,10).map(e=>({token:e[0], count:e[1]}));
+
+            const markersMap = {};
+            STATE.utterances.flatMap(u => u.discourse_markers).forEach(m => markersMap[m] = (markersMap[m] || 0) + 1);
+
+            return {
+                frequent_words: frequentWords,
+                code_switch_patterns: STATE.utterances.filter(u=>u.code_switch).map(u=>u.language_tags),
+                discourse_markers_summary: Object.entries(markersMap).map(e=>({marker: e[0], count: e[1]}))
+            };
+        }
+
+        function exportData(format) {
+            const dataset = compileFullDatasetJSON();
+            const jsonString = JSON.stringify(dataset, null, 2);
+
+            if (format === 'json') {
+                triggerFileDownload(jsonString, `${dataset.session.title.replace(/\s+/g, '_')}_linguistic_data.json`, 'application/json');
+            } else if (format === 'txt') {
+                let txt = `ACADEMIC LINGUISTIC FIELD DATA TRANSCRIPT\n`;
+                txt += `==========================================\n`;
+                txt += `Title: ${dataset.session.title}\n`;
+                txt += `Researcher: ${dataset.session.researcher}\n`;
+                txt += `Location: ${dataset.session.location}\n`;
+                txt += `Date: ${dataset.session.date}\n\n`;
+                txt += `TRANSCRIPT RECORD:\n`;
+                txt += `------------------\n`;
+                
+                dataset.utterances.forEach(u => {
+                    txt += `[${u.timestamp}] [${u.language_tags.join('/')}] [CS: ${u.code_switch ? 'Y' : 'N'}]: ${u.raw_text}\n`;
+                    txt += `Phonetic IPA: ${u.phonetic_approx}\n`;
+                    if (u.notes) txt += `Field Notes: ${u.notes}\n`;
+                    txt += `\n`;
+                });
+
+                triggerFileDownload(txt, `${dataset.session.title.replace(/\s+/g, '_')}_transcript.txt`, 'text/plain');
+            } else if (format === 'html') {
+                let htmlContent = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${dataset.session.title}</title>`;
+                htmlContent += `<style>body{font-family:system-ui, sans-serif; max-width:800px; margin:40px auto; padding:20px; background:#fafafa; color:#333; line-height:1.6;} .session-header{border-bottom:2px solid #3b82f6; padding-bottom:15px; margin-bottom:20px;} .card{background:#fff; border-radius:8px; padding:15px; margin-bottom:12px; box-shadow:0 2px 4px rgba(0,0,0,0.05);} .timestamp{font-size:0.75rem; color:#888; font-family:monospace;} .phonetic{color:#4f46e5; font-family:serif; font-size:1.1rem; margin-top:5px;}</style></head><body>`;
+                htmlContent += `<div class="session-header"><h1>${dataset.session.title}</h1><p>Researcher: ${dataset.session.researcher} | Location: ${dataset.session.location} | Date: ${dataset.session.date}</p></div>`;
+                
+                dataset.utterances.forEach(u => {
+                    htmlContent += `<div class="card">`;
+                    htmlContent += `<div><span class="timestamp">[${u.timestamp}]</span> <strong>[${u.language_tags.join(', ')}]</strong></div>`;
+                    htmlContent += `<div style="font-size:1.1rem; margin:8px 0;">${u.raw_text}</div>`;
+                    htmlContent += `<div class="phonetic">Phonetics: ${u.phonetic_approx}</div>`;
+                    if (u.notes) htmlContent += `<div style="font-size:0.85rem; color:#666; margin-top:8px;">Notes: ${u.notes}</div>`;
+                    htmlContent += `</div>`;
+                });
+                htmlContent += `</body></html>`;
+
+                triggerFileDownload(htmlContent, `${dataset.session.title.replace(/\s+/g, '_')}_interactive.html`, 'text/html');
+            } else if (format === 'docx') {
+                // Generate robust HTML structure mimicking WordprocessingML document format
+                let docHtml = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><title>${dataset.session.title}</title><style>body{font-family:'Times New Roman', serif; line-height:1.5;} h1{text-align:center; font-size:18pt;} .meta{font-size:11pt; margin-bottom:20px;} table{width:100%; border-collapse:collapse;} th,td{border:1px solid #ccc; padding:8px; text-align:left; font-size:10.5pt;}</style></head><body>`;
+                docHtml += `<h1>ACADEMIC RESEARCH TRANSCRIPT</h1>`;
+                docHtml += `<div class="meta"><b>Title:</b> ${dataset.session.title}<br/><b>Researcher:</b> ${dataset.session.researcher}<br/><b>Location:</b> ${dataset.session.location}<br/><b>Date:</b> ${dataset.session.date}</div>`;
+                docHtml += `<table><thead><tr style="background:#f2f2f2;"><th>Time</th><th>Transcribed Utterance</th><th>Phonetic Mapping (IPA)</th><th>Language Tag</th></tr></thead><tbody>`;
+                
+                dataset.utterances.forEach(u => {
+                    docHtml += `<tr><td>${u.timestamp}</td><td>${u.raw_text}</td><td>${u.phonetic_approx}</td><td>${u.language_tags.join(', ')}</td></tr>`;
+                });
+                
+                docHtml += `</tbody></table></body></html>`;
+
+                triggerFileDownload(docHtml, `${dataset.session.title.replace(/\s+/g, '_')}_academic.doc`, 'application/msword');
+            } else if (format === 'pdf') {
+                triggerPdfGeneration();
+            }
+        }
+
+        function triggerFileDownload(content, filename, contentType) {
+            const blob = new Blob([content], {type: contentType});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Generate journal print layout dynamically
+        function triggerPdfGeneration() {
+            DOM.printTitle.textContent = DOM.sessionTitle.value;
+            DOM.printInvestigator.textContent = DOM.sessionResearcher.value;
+            DOM.printLocation.textContent = DOM.sessionLoc.value;
+            DOM.printDate.textContent = STATE.session.date;
+            DOM.printLang.textContent = DOM.langSelector.value;
+
+            let printRows = '';
+            STATE.utterances.forEach((u, index) => {
+                printRows += `
+                    <div class="utterance-print-card">
+                        <div class="flex justify-between font-mono text-xs text-gray-500 mb-1">
+                            <span>Utterance #${index + 1} • Timestamp: ${u.timestamp}</span>
+                            <span>Language: ${u.language_tags.join('/')} ${u.code_switch ? '(Code-Switched)' : ''}</span>
+                        </div>
+                        <div class="text-lg font-serif mb-2" style="font-size: 13pt;">"${u.raw_text}"</div>
+                        <div class="text-sm font-sans text-indigo-800 italic font-mono">Phonetic IPA: ${u.phonetic_approx}</div>
+                        ${u.notes ? `<div class="text-xs text-gray-600 mt-1"><strong>Field Notes:</strong> ${u.notes}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            DOM.printUtterances.innerHTML = printRows || '<p class="text-center text-gray-500">No transcription segments captured yet.</p>';
+            window.print();
+        }
+
+        /* ==========================================================================
+           5. ANALYTICS ENGINE MODULE
+           ========================================================================== */
+        function runLinguisticAnalytics() {
+            DOM.metricTotalUtterance.textContent = STATE.utterances.length;
+
+            const words = STATE.utterances.flatMap(u => u.raw_text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"").split(/\s+/)).filter(Boolean);
+            
+            // Calculate WPM Speech Rate Estimate
+            if (STATE.utterances.length > 0 && STATE.recordingSeconds > 0) {
+                const wpm = Math.round((words.length / STATE.recordingSeconds) * 60);
+                DOM.metricWPM.textContent = wpm || 0;
+            } else {
+                DOM.metricWPM.textContent = 0;
+            }
+
+            // Word frequency analysis
+            const wordMap = {};
+            words.forEach(w => wordMap[w] = (wordMap[w] || 0) + 1);
+            const sortedWords = Object.entries(wordMap).sort((a,b)=>b[1]-a[1]).slice(0, 5);
+
+            DOM.wordFreqTable.innerHTML = sortedWords.length ? sortedWords.map(e => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                    <td class="px-3 py-1.5 font-mono text-slate-700 dark:text-slate-300 font-semibold">${e[0]}</td>
+                    <td class="px-3 py-1.5 text-right font-bold text-indigo-500">${e[1]}</td>
+                </tr>
+            `).join('') : `<tr><td colspan="2" class="text-center py-4 text-slate-400">No data compiled</td></tr>`;
+
+            // Calculate Language Mix ratios
+            const mixCount = { Tagalog: 0, Cebuano: 0, English: 0, Mandarin: 0 };
+            let totalTaggableSegments = 0;
+
+            STATE.utterances.forEach(u => {
+                u.language_tags.forEach(t => {
+                    if (t in mixCount) {
+                        mixCount[t]++;
+                        totalTaggableSegments++;
+                    }
+                });
+            });
+
+            if (totalTaggableSegments > 0) {
+                // Populate Color Bar segments
+                let bars = '';
+                let legend = '';
+                const colors = { Tagalog: 'bg-amber-500', Cebuano: 'bg-emerald-500', English: 'bg-indigo-500', Mandarin: 'bg-red-500' };
+                const textColors = { Tagalog: 'text-amber-500', Cebuano: 'text-emerald-500', English: 'text-indigo-500', Mandarin: 'text-red-500' };
+
+                Object.entries(mixCount).forEach(([lang, val]) => {
+                    if (val === 0) return;
+                    const percent = Math.round((val / totalTaggableSegments) * 100);
+                    bars += `<div class="${colors[lang]} h-full transition-all" style="width: ${percent}%" title="${lang}: ${percent}%"></div>`;
+                    legend += `
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 py-0.5">
+                            <span class="${textColors[lang]} font-bold">• ${lang}</span>
+                            <span>${percent}%</span>
+                        </div>
+                    `;
+                });
+                DOM.ratioMixBar.innerHTML = bars;
+                DOM.ratioMetricsGrid.innerHTML = legend;
+            } else {
+                DOM.ratioMixBar.innerHTML = `<div class="bg-slate-300 dark:bg-slate-700 h-full w-full"></div>`;
+                DOM.ratioMetricsGrid.innerHTML = `<span class="text-slate-400">Waiting for data stream...</span>`;
+            }
+
+            // Realtime discourse tracker list
+            let fillerCounts = { 'ano': 0, 'eh': 0, 'kuan': 0, 'uh': 0, 'um': 0, 'like': 0, 'neige': 0 };
+            let totalFillers = 0;
+            STATE.utterances.forEach(u => {
+                u.fillers.forEach(f => {
+                    if (f in fillerCounts) {
+                        fillerCounts[f]++;
+                        totalFillers++;
+                    }
+                });
+            });
+
+            let discourseMarkup = '';
+            Object.entries(fillerCounts).forEach(([word, count]) => {
+                const percent = totalFillers > 0 ? Math.round((count / totalFillers) * 100) : 0;
+                discourseMarkup += `
+                    <div class="space-y-0.5">
+                        <div class="flex justify-between text-[11px] font-mono">
+                            <span class="font-bold">"${word}"</span>
+                            <span>${count} times</span>
+                        </div>
+                        <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                            <div class="bg-indigo-600 h-full rounded-full" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            DOM.discourseTrackerList.innerHTML = discourseMarkup;
+        }
+
+        /* ==========================================================================
+           6. EDITABLE INTERACTIVE TRANSCRIPT WORKSPACE
+           ========================================================================== */
+        function renderTranscriptWorkspace() {
+            const query = DOM.searchInput.value.toLowerCase();
+            const filterType = DOM.filterTag.value;
+
+            const filtered = STATE.utterances.filter(u => {
+                const textMatch = u.raw_text.toLowerCase().includes(query) || 
+                                  u.phonetic_approx.toLowerCase().includes(query) || 
+                                  u.notes.toLowerCase().includes(query);
+                
+                if (!textMatch) return false;
+
+                if (filterType === 'all') return true;
+                if (filterType === 'code_switch') return u.code_switch;
+                if (filterType === 'has_fillers') return u.fillers.length > 0;
+                return u.language_tags.includes(filterType);
+            });
+
+            DOM.transcriptStream.innerHTML = filtered.length ? filtered.map((u, idx) => `
+                <div class="bg-white dark:bg-slate-900 rounded-xl p-4 shadow-sm border border-slate-200 dark:border-slate-800/80 transition-all space-y-3.5 relative group">
+                    
+                    <!-- Card Top Header Meta -->
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="bg-slate-100 dark:bg-slate-800 font-mono text-[10px] px-2 py-0.5 rounded font-bold text-slate-500">SEG #${idx + 1}</span>
+                            <span class="text-slate-400 text-xs font-mono">${u.timestamp}</span>
+                            
+                            <!-- Dynamic Tagbadges -->
+                            ${u.language_tags.map(tag => `
+                                <span class="bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-100 dark:border-indigo-900/50">${tag}</span>
+                            `).join('')}
+
+                            ${u.code_switch ? `
+                                <span class="bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-900/50">Code-Switched</span>
+                            ` : ''}
+                        </div>
+
+                        <!-- Segment Controls -->
+                        <div class="flex items-center gap-1 opacity-60 hover:opacity-100 transition">
+                            <button onclick="mergeUtteranceWithPrevious('${u.id}')" class="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded" title="Merge with previous segment">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                            </button>
+                            <button onclick="deleteUtterance('${u.id}')" class="p-1 text-slate-400 hover:text-red-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded" title="Remove Utterance">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Direct Editable Text Block -->
+                    <div>
+                        <div contenteditable="true" 
+                             class="utterance-textbox font-serif text-[15px] leading-relaxed text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500 p-1.5 rounded transition"
+                             onblur="updateUtteranceField('${u.id}', 'raw_text', this.innerText)"
+                             onkeydown="handleTextKeyPress(event, '${u.id}')"
+                             placeholder="Type transcript segment...">${highlightTextLinguistically(u)}</div>
+                        <div class="flex justify-between items-center text-[10px] text-slate-400 mt-1 px-1 font-mono">
+                            <span>Confidence: <span class="font-bold text-slate-500">${u.confidence}</span></span>
+                            <span>Split: [Ctrl+Enter] • Merge: [Ctrl+Backspace]</span>
+                        </div>
+                    </div>
+
+                    <!-- Toggleable Complex Linguistic Research Layer (Critical) -->
+                    <div class="research-fields border-t border-slate-100 dark:border-slate-800 pt-3.5 space-y-3.5 ${STATE.researchMode ? 'block' : 'hidden'}">
+                        
+                        <!-- Phonetic Orthography Layout -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="space-y-1">
+                                <label class="block text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Phonetic Approximation (IPA)</label>
+                                <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-850 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-800">
+                                    <span class="text-indigo-400 font-bold select-none text-xs font-mono">/</span>
+                                    <input type="text" value="${u.phonetic_approx.replace(/\//g, '')}" 
+                                           class="phonetic-approx-input bg-transparent text-sm font-sans text-indigo-700 dark:text-indigo-300 focus:outline-none w-full font-semibold"
+                                           onfocus="setCurrentPhoneticFocus(this)"
+                                           onblur="updateUtteranceField('${u.id}', 'phonetic_approx', '/' + this.value + '/')">
+                                    <span class="text-indigo-400 font-bold select-none text-xs font-mono">/</span>
+                                    <button onclick="autoFillPhonetics('${u.id}', '${u.raw_text.replace(/'/g, "\\'")}')" class="p-1 hover:bg-indigo-100 dark:hover:bg-indigo-950/60 rounded text-[10px] font-bold text-indigo-600 dark:text-indigo-400" title="Auto-approximate IPA">Auto</button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] uppercase font-extrabold text-slate-400 tracking-wider mb-1">Sentence Type</label>
+                                    <select onchange="updateUtteranceField('${u.id}', 'sentence_type', this.value)" class="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-lg p-1.5 text-xs focus:outline-none">
+                                        <option value="declarative" ${u.sentence_type === 'declarative' ? 'selected' : ''}>Declarative</option>
+                                        <option value="interrogative" ${u.sentence_type === 'interrogative' ? 'selected' : ''}>Interrogative</option>
+                                        <option value="imperative" ${u.sentence_type === 'imperative' ? 'selected' : ''}>Imperative</option>
+                                        <option value="exclamatory" ${u.sentence_type === 'exclamatory' ? 'selected' : ''}>Exclamatory</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] uppercase font-extrabold text-slate-400 tracking-wider mb-1">POS Highlight</label>
+                                    <button onclick="toggleHighlightMode('${u.id}')" class="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-lg p-1.5 text-[11px] font-semibold text-slate-500 hover:text-indigo-600 transition">
+                                        Marker Highlight
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Qualitative Observations / Field Notes -->
+                        <div class="space-y-1">
+                            <label class="block text-[10px] uppercase font-extrabold text-slate-400 tracking-wider">Field Annotations / Discourse Notes</label>
+                            <textarea onblur="updateUtteranceField('${u.id}', 'notes', this.value)" 
+                                      placeholder="Insert notes on code-switching motivations, stress/intonation pattern, socio-phonetic context..." 
+                                      class="w-full bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-800 rounded-lg p-2 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 transition h-14 resize-none">${u.notes}</textarea>
+                        </div>
+                    </div>
+                </div>
+            `).join('') : `
+                <div class="bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center text-slate-400 flex flex-col items-center justify-center space-y-3">
+                    <svg class="w-12 h-12 text-slate-300 dark:text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                    <div>
+                        <h4 class="font-bold text-slate-500 dark:text-slate-300">No transcription segments compiled</h4>
+                        <p class="text-xs">Select your language configuration and press "Start Recording" or click "Add Segment" manually.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function highlightTextLinguistically(u) {
+            let text = u.raw_text;
+            if (!text) return '';
+
+            // Apply styling highlights dynamically to fillers and discourse markers
+            let words = text.split(/\s+/);
+            const styledWords = words.map(w => {
+                const norm = w.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+                
+                // Highlight filler
+                if (u.fillers.includes(norm)) {
+                    return `<span class="hl-filler text-red-600 dark:text-red-400" title="Linguistic Filler">${w}</span>`;
+                }
+                // Highlight discourse marker
+                if (u.discourse_markers.includes(norm)) {
+                    return `<span class="hl-discourse text-blue-600 dark:text-blue-400" title="Discourse Marker">${w}</span>`;
+                }
+                return w;
+            });
+
+            return styledWords.join(' ');
+        }
+
+        function handleTextKeyPress(e, id) {
+            // Split segment on Ctrl+Enter
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                const selection = window.getSelection();
+                const cursorIndex = selection.anchorOffset;
+                const rawText = e.target.innerText;
+                splitUtteranceAtCursor(id, cursorIndex, rawText);
+            }
+            // Merge segment on Ctrl+Backspace at first character
+            if (e.ctrlKey && e.key === 'Backspace') {
+                const selection = window.getSelection();
+                if (selection.anchorOffset === 0) {
+                    e.preventDefault();
+                    mergeUtteranceWithPrevious(id);
+                }
+            }
+        }
+
+        function autoFillPhonetics(id, rawText) {
+            const ipa = generateRuleBasedIpa(rawText);
+            updateUtteranceField(id, 'phonetic_approx', ipa);
+            renderTranscriptWorkspace();
+        }
+
+        function setCurrentPhoneticFocus(inputElement) {
+            currentFocusedPhoneticInput = inputElement;
+            DOM.ipaKeyboardModal.classList.remove('translate-y-full');
+        }
+
+        function insertIpaCharacter(char) {
+            if (currentFocusedPhoneticInput) {
+                const start = currentFocusedPhoneticInput.selectionStart;
+                const end = currentFocusedPhoneticInput.selectionEnd;
+                const text = currentFocusedPhoneticInput.value;
+                currentFocusedPhoneticInput.value = text.substring(0, start) + char + text.substring(end);
+                currentFocusedPhoneticInput.focus();
+                currentFocusedPhoneticInput.selectionStart = currentFocusedPhoneticInput.selectionEnd = start + char.length;
+                
+                // Trigger programmatic sync
+                currentFocusedPhoneticInput.dispatchEvent(new Event('blur'));
+            }
+        }
+
+        function toggleHighlightMode(id) {
+            // Manually highlight/stress words inside text fields
+            alert("Marker Mode enabled. Select words inside the text editor and double-click to highlight as focal speech emphasis.");
+        }
+
+        /* ==========================================================================
+           7. SYSTEM AUTOSAVE, HISTORY & VERSION TIMELINE
+           ========================================================================== */
+        function saveSession() {
+            try {
+                const data = compileFullDatasetJSON();
+                localStorage.setItem('lingua_session_active', JSON.stringify(data));
+                DOM.saveStatus.textContent = "Auto-saved locally";
+                DOM.saveStatus.className = "text-emerald-500 font-semibold";
+            } catch (err) {
+                DOM.saveStatus.textContent = "Auto-save error";
+                DOM.saveStatus.className = "text-red-500 font-semibold";
+            }
+        }
+
+        function loadSession() {
+            try {
+                const saved = localStorage.getItem('lingua_session_active');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    DOM.sessionTitle.value = parsed.session.title || "Cebuano-Taglish Spontaneous Interaction";
+                    DOM.sessionResearcher.value = parsed.session.researcher || "Dr. J. Cruz";
+                    DOM.sessionLoc.value = parsed.session.location || "Manila, PH";
+                    STATE.session.date = parsed.session.date || new Date().toISOString().split('T')[0];
+                    STATE.utterances = parsed.utterances || [];
+                    renderTranscriptWorkspace();
+                    runLinguisticAnalytics();
+                }
+            } catch (err) {
+                console.warn("No active cache found to restore. Standard workspace ready.");
+            }
+        }
+
+        function pushHistoryState() {
+            // Save deep clone clone to history stack
+            STATE.undoStack.push(JSON.stringify(STATE.utterances));
+            STATE.redoStack = []; // clear redo buffer
+            updateUndoRedoButtons();
+        }
+
+        function performUndo() {
+            if (STATE.undoStack.length === 0) return;
+            STATE.redoStack.push(JSON.stringify(STATE.utterances));
+            STATE.utterances = JSON.parse(STATE.undoStack.pop());
+            updateUndoRedoButtons();
+            renderTranscriptWorkspace();
+            runLinguisticAnalytics();
+            saveSession();
+        }
+
+        function performRedo() {
+            if (STATE.redoStack.length === 0) return;
+            STATE.undoStack.push(JSON.stringify(STATE.utterances));
+            STATE.utterances = JSON.parse(STATE.redoStack.pop());
+            updateUndoRedoButtons();
+            renderTranscriptWorkspace();
+            runLinguisticAnalytics();
+            saveSession();
+        }
+
+        function updateUndoRedoButtons() {
+            DOM.btnUndo.disabled = STATE.undoStack.length === 0;
+            DOM.btnRedo.disabled = STATE.redoStack.length === 0;
+        }
+
+        /* ==========================================================================
+           8. CORE CONTROLLER & SYSTEM BOOT
+           ========================================================================== */
+        function bindSystemEvents() {
+            // Speech recording buttons
+            DOM.btnRecord.addEventListener('click', async () => {
+                if (!STATE.isRecording) {
+                    // Start speech listening loop
+                    STATE.isRecording = true;
+                    STATE.isPaused = false;
+                    DOM.btnRecord.innerHTML = `
+                        <span class="relative flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
+                        <span>Stop Recording</span>
+                    `;
+                    DOM.btnRecord.className = "w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition shadow-lg flex items-center justify-center gap-2.5 relative overflow-hidden";
+                    
+                    initSpeechEngine();
+                    await initAudioVisualization();
+                    if (recognition) {
+                        try { recognition.start(); } catch(_) {}
+                    }
+                    startSpeechTimer();
+                } else {
+                    // Turn recording off
+                    STATE.isRecording = false;
+                    STATE.isPaused = false;
+                    DOM.btnRecord.innerHTML = `
+                        <span class="relative flex h-3 w-3">
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-slate-300"></span>
+                        </span>
+                        <span>Start Recording</span>
+                    `;
+                    DOM.btnRecord.className = "w-full py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition shadow-lg flex items-center justify-center gap-2.5 relative overflow-hidden";
+                    
+                    if (recognition) {
+                        try { recognition.stop(); } catch(_) {}
+                    }
+                    stopSpeechTimer();
+                    setSpeechStatus('Idle', 'bg-slate-400');
+                }
+            });
+
+            DOM.btnPause.addEventListener('click', () => {
+                if (!STATE.isRecording) return;
+                if (!STATE.isPaused) {
+                    STATE.isPaused = true;
+                    DOM.btnPause.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path></svg>
+                        <span>Resume Listening</span>
+                    `;
+                    if (recognition) {
+                        try { recognition.stop(); } catch(_) {}
+                    }
+                    setSpeechStatus('Paused', 'bg-amber-500');
+                } else {
+                    STATE.isPaused = false;
+                    DOM.btnPause.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Pause Listening</span>
+                    `;
+                    if (recognition) {
+                        try { recognition.start(); } catch(_) {}
+                    }
+                    setSpeechStatus('Listening', 'bg-emerald-500 animate-pulse');
+                }
+            });
+
+            // Undo / Redo Click Bindings
+            DOM.btnUndo.addEventListener('click', performUndo);
+            DOM.btnRedo.addEventListener('click', performRedo);
+
+            // Settings sliders
+            DOM.pauseSlider.addEventListener('input', (e) => {
+                DOM.pauseVal.textContent = e.target.value + 's';
+            });
+
+            DOM.langSelector.addEventListener('change', () => {
+                if (recognition && STATE.isRecording) {
+                    recognition.lang = DOM.langSelector.value === 'auto' ? 'fil-PH' : DOM.langSelector.value;
+                    try {
+                        recognition.stop();
+                    } catch (_) {}
+                }
+            });
+
+            // Search filters
+            DOM.searchInput.addEventListener('input', renderTranscriptWorkspace);
+            DOM.filterTag.addEventListener('change', renderTranscriptWorkspace);
+
+            // Manual segment generation
+            DOM.btnAddNewUtterance.addEventListener('click', () => {
+                appendUtteranceFromStream("New Transcribed segment block ready for phonetic mapping.", 1.00);
+            });
+
+            // Active Global Toggles
+            DOM.toggleResearchMode.addEventListener('click', () => {
+                STATE.researchMode = !STATE.researchMode;
+                DOM.toggleResearchMode.textContent = `🔬 Research Mode: ${STATE.researchMode ? 'ON' : 'OFF'}`;
+                DOM.toggleResearchMode.className = STATE.researchMode ? 
+                    'px-3 py-1.5 rounded-md bg-indigo-600 text-white shadow-sm transition' : 
+                    'px-3 py-1.5 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-500 transition';
+                renderTranscriptWorkspace();
+            });
+
+            // Theme setup
+            DOM.themeToggle.addEventListener('click', () => {
+                const doc = document.documentElement;
+                if (doc.classList.contains('dark')) {
+                    doc.classList.remove('dark');
+                    doc.classList.add('light');
+                } else {
+                    doc.classList.remove('light');
+                    doc.classList.add('dark');
+                }
+            });
+
+            // IPA Keyboard Dismiss
+            DOM.btnCloseIpaKeyboard.addEventListener('click', () => {
+                DOM.ipaKeyboardModal.classList.add('translate-y-full');
+            });
+        }
+
+        // Active Speech Tracking Timer
+        function startSpeechTimer() {
+            clearInterval(STATE.timerInterval);
+            STATE.timerInterval = setInterval(() => {
+                STATE.recordingSeconds++;
+                const hrs = Math.floor(STATE.recordingSeconds / 3600).toString().padStart(2, '0');
+                const mins = Math.floor((STATE.recordingSeconds % 3600) / 60).toString().padStart(2, '0');
+                const secs = (STATE.recordingSeconds % 60).toString().padStart(2, '0');
+                DOM.speechTimer.textContent = `${hrs}:${mins}:${secs}`;
+                
+                // Track real-time average speech rate updates
+                if (STATE.recordingSeconds % 3 === 0) {
+                    runLinguisticAnalytics();
+                }
+            }, 1000);
+        }
+
+        function stopSpeechTimer() {
+            clearInterval(STATE.timerInterval);
+        }
+
+        // Populate Virtual IPA Keyboard interface elements
+        function initializeIpaKeyboard() {
+            const makeKey = (char) => `<button onclick="insertIpaCharacter('${char}')" class="px-2 py-1.5 bg-slate-850 hover:bg-indigo-600 text-white rounded text-xs font-mono transition border border-slate-800">${char}</button>`;
+            
+            DOM.ipaPlosives.innerHTML = IPA_KEYS.plosives.map(makeKey).join('');
+            DOM.ipaFricatives.innerHTML = IPA_KEYS.fricatives.map(makeKey).join('');
+            DOM.ipaVowels.innerHTML = IPA_KEYS.vowels.map(makeKey).join('');
+            DOM.ipaSupra.innerHTML = IPA_KEYS.supra.map(makeKey).join('');
+        }
+
+        // Initialize Core System Modules
+        window.onload = function() {
+            bindSystemEvents();
+            initializeIpaKeyboard();
+            loadSession();
+            
+            // Populate initial mockup placeholder dataset for instant workspace utility demonstration
+            if (STATE.utterances.length === 0) {
+                appendUtteranceFromStream("Magandang hapon po, I have a linguistic meeting later sa palengke.", 0.98);
+                appendUtteranceFromStream("Naa koy meeting unsaon nato kani pag resolve, is there standard speech?", 0.94);
+                appendUtteranceFromStream("Hello Dr. Cruz, we are analyzing multi-language interactions today.", 0.97);
+            }
+        };
+    </script>
+</body>
+</html>
